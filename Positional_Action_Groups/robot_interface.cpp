@@ -8,9 +8,10 @@ LobotServo servos[6];
 int stored_positions = 0;
 stored_position sequence[10];
 
-// Min travel globals
+// Optimization globals
 int current_servo_positions[6] = {0};
 bool found_min = false;
+bool optimize = false;
 
 void setup_controller() {
 
@@ -93,11 +94,11 @@ bool set_servo_pos_from_cartesian(float x, float y, float z) {
     else if(gamma < -120) {
         gamma+=180;
     }
-
-    j6 = 500 - (gamma/degrees_per_tick);
+    
+    j6 = (500 - (gamma/degrees_per_tick));
 
     float d = sqrt(x*x + z*z);
-    if (x < 0)
+    if (x<0)
         d*=-1;
 
     found_min = false;
@@ -121,7 +122,16 @@ retry:
 
         if (pos_is_legal(j6, j5, j4, j3) && verify_pos(t1, t2, t3, d, y)) {
           valid = true;
-          calculate_min_travel(j3, j4, j5, j6, j3m, j4m, j5m, j6m);
+          if(optimize)
+            calculate_min_travel(j3, j4, j5, j6, j3m, j4m, j5m, j6m);
+          else {
+            j3m = j3;
+            j4m = j4;
+            j5m = j5;
+            j6m = j6;
+            break;
+          }
+            
         }
         else if (t2 > 0){
           t2*=-1;
@@ -263,6 +273,7 @@ void execute() {
 void printHelp() {
   Serial.println("\nAcceptable Commands:");
   Serial.println("\th - Help");
+  Serial.println("\tt - Toggle Trajectory Optimization");
   Serial.println("\tp - Print current servo positions (0-1000)");
   Serial.println("\tc - Close gripper");
   Serial.println("\to - Open gripper");
@@ -314,6 +325,15 @@ float get_float_from_serial() {
       // Special Cases
       if(incomingByte == (int)'h') {
         printHelp();
+        break;
+      }
+      else if(incomingByte == (int)'t') {
+        optimize = !optimize;
+        Serial.print("\nTrajectory Optimization = ");
+        if(optimize)
+          Serial.println("On");
+        else
+          Serial.println("Off");
         break;
       }
       else if(incomingByte == (int)'c') {
