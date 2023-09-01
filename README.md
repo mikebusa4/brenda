@@ -9,7 +9,6 @@ git add *
 git commit -m "<description of changes>"
 ```
 Example: `git commit -m "Added new trajectory calculation"
-```
 
 ```
 git push
